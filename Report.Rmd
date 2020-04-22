@@ -1,0 +1,374 @@
+---
+title: "Untitled"
+author: "Blaise Munyampirwa"
+date: "8/14/2019"
+output:
+  html_document: default
+  word_document: default
+---
+
+```{r}
+rm(list = ls())
+library(dplyr)
+library(survival)
+library(survminer)
+library(ggplot2)
+library(tidyverse)
+library(readxl)
+```
+
+```{r}
+
+data <- read_excel("all_inclusive.xlsx")
+#data <- read.xls("all_inclusive.xlsx", header = TRUE)
+d <- data %>%
+  select(time, group, confluence) %>%
+  mutate(time = factor(time),
+         group = factor(group))
+
+```
+
+
+
+
+```{r}
+d %>%
+  group_by(time, group) %>%
+  summarise(confluence_mean = mean(confluence))
+
+```
+
+
+
+```{r}
+sum_d <- d %>%
+  group_by(time, group) %>%
+  summarise(confluence_mean = mean(confluence),
+            confluence_ci = (sd(confluence)/ sqrt(n()))/2)
+
+sum_d
+
+```
+
+
+
+
+```{r}
+pd <- position_dodge(width = 0.1)
+sum_d %>%
+  ggplot(aes(x=time, y=confluence_mean, group =group, color=group)) + 
+  geom_point(size = 2, position = pd) +
+  geom_line(aes(linetype = group, color = group), position = pd) +
+  geom_errorbar(aes(ymin = confluence_mean - confluence_ci, ymax = confluence_mean + confluence_ci, color = group), width = 0.6, position = pd) + 
+   geom_point(size = 3, position = pd) +
+    geom_point(size = 2, color = "white", position = pd) +
+   theme(panel.background = element_rect(fill = "white"),
+        legend.key = element_rect(fill = "white"),
+         axis.line.x = element_line(colour = "black", size = 1),
+         axis.line.y = element_line(colour = "black", size = 1)) + 
+  font("title", size = 15, color = "black", face = "bold") +
+  font("xlab", size = 14, color = "black", face = "bold") +
+  font("ylab", size = 14, color = "black", face = "bold") +
+  font("legend.title", color = "black", face = "bold") +
+  font("legend.text", size = 14, color = "black", face = "bold") +
+  font("x.text", size = 12, color = "black", face = "bold") + 
+  font("y.text", size = 12, color = "black", face = "bold") + 
+  xlab("Hours Post Treatment") +
+  ylab("Cell  Confluence")
+
+
+
+```
+
+
+
+
+
+```{r}
+#=================ANALYSIS OF VARIANCE AFTER DAY 1=========================
+```
+
+```{r}
+#Retrieving data
+anova_data <- data[c(97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112),]
+
+#Order the levels:
+anova_data$group <- ordered(anova_data$group, levels = c("control", "dex", "cis", "cis+dex"))
+```
+
+```{r}
+
+#COMPUTING THE SUMMARY STATISTICS(MEAN AND STANDARD DEVIATION) BY GROUP 
+group_by(anova_data, group) %>%
+  summarise(
+    count = n(),
+    mean = mean(confluence),
+    sd = sd(confluence)
+  )
+
+
+```
+
+```{r}
+#BOX PLOTS
+#PLOTTING CONFLUENCE BY GROUP
+# Box plot
+# boxplot(confluence ~ group, data = anova_data,
+#         xlab = "Treatment Group", ylab = "Confluence",
+#         frame = FALSE)
+
+library(ggpubr)
+ggboxplot(anova_data, x="group", y="confluence",
+          color = "group", order = c("control", "dex", "cis", "cis+dex"),
+          ylab = "Mean Confluence", xlab = "Treatment Group", palette = NULL) + 
+  font("xlab", size = 14, color = "black", face = "bold") +
+  font("ylab", size = 14, color = "black", face = "bold") +
+  font("legend.title", face = "bold", size = 15) +
+  font("legend.text", size = 15, face = "bold") +
+  font("x.text", size = 14, face = "bold") + 
+  font("y.text", size = 14, face = "bold") + 
+  ylab("Confluence")
+
+```
+
+```{r}
+#COMPUTING THE ANALYSIS OF VARIANCE TEST
+output <- aov(confluence ~ group, data = anova_data)
+
+#summary of the results: including the f-statistic and p-value
+summary(output)
+
+```
+
+```{r}
+#As the p-value is less than the significance level 0.05, we can conclude that there are significant differences between the groups highlighted with “*" in the model summary. However, we do not know which pairs of groups are different. We need to use multiple pair-wise comparison to compare any two groups. 
+
+#TUKEY MULTIPLE PAIR-WISE COMPARISON - Tukey Honest Significant Differences(TukeyHSD)
+TukeyHSD(output)
+
+```
+
+```{r}
+#=================ANALYSIS OF VARIANCE AFTER 48 HOURS=========================
+#=============================================================================
+```
+
+```{r}
+#Retrieving data
+anova_data2 <- data[c(241,242,243,244,245,246,247,248,249,250,251,252,253,254,255,256),]
+
+#Order the levels:
+anova_data2$group <- ordered(anova_data2$group, levels = c("control", "dex", "cis", "cis+dex"))
+
+```
+
+```{r}
+#COMPUTING THE SUMMARY STATISTICS(MEAN AND STANDARD DEVIATION) BY GROUP 
+group_by(anova_data2, group) %>%
+  summarise(
+    count = n(),
+    mean = mean(confluence),
+    sd = sd(confluence)
+  )
+
+
+```
+
+```{r}
+#BOX PLOTS
+#PLOTTING CONFLUENCE BY GROUP
+# Box plot
+#boxplot(confluence ~ group, data = anova_data2,
+ #       xlab = "Treatment Group", ylab = "Confluence",
+  #      frame = FALSE)
+
+library(ggpubr)
+ggboxplot(anova_data2, x="group", y="confluence",
+          color = "group", order = c("control", "dex", "cis", "cis+dex"),
+          ylab = "Mean Confluence", xlab = "Treatment Group", palette = NULL) + 
+  font("xlab", size = 14, color = "black", face = "bold") +
+  font("ylab", size = 14, color = "black", face = "bold") +
+  font("legend.title", face = "bold", size = 15) +
+  font("legend.text", size = 15, face = "bold") +
+  font("x.text", size = 14, face = "bold") + 
+  font("y.text", size = 14, face = "bold") + 
+  ylab("Confluence")
+
+```
+
+```{r}
+#COMPUTING THE ANALYSIS OF VARIANCE TEST
+resultats <- aov(confluence ~ group, data = anova_data2)
+
+#summary of the results: including the f-statistic and p-value
+summary(resultats)
+
+```
+
+```{r}
+#As the p-value is less than the significance level 0.05, we can conclude that there are significant differences between the groups highlighted with “*" in the model summary. However, we do not know which pairs of groups are different. We need to use multiple pair-wise comparison to compare any two groups. 
+
+#TUKEY MULTIPLE PAIR-WISE COMPARISON - Tukey Honest Significant Differences(TukeyHSD)
+TukeyHSD(resultats)
+```
+
+```{r}
+#==================CELL COUNTING ANALYSIS AFTER APPROXIMATELY 72 HOURS=========================
+#==============================================================================================
+
+
+data_summary <- function(data, varname, groupnames){
+  require(plyr)
+  summary_func <- function(x, col){
+    c(mean = mean(x[[col]], na.rm=TRUE),
+      sd = sd(x[[col]], na.rm=TRUE))
+  }
+  data_sum<-ddply(data, groupnames, .fun=summary_func,
+                  varname)
+  data_sum <- rename(data_sum, c("mean" = varname))
+ return(data_sum)
+}
+
+```
+
+```{r}
+Anova <- read_excel("cell_count.xlsx")
+#ORDER THE LEVELS
+Anova$Group <- ordered(Anova$Group, levels = c("control", "dex", "cis", "cis_and_dex"))
+
+df2 <- data_summary(Anova, varname="Count", 
+                    groupnames= "Group")
+# Convert dose to a factor variable
+#df2$dose=as.factor(df2$dose)
+head(df2)
+
+```
+
+```{r}
+p<- ggplot(df2, aes(x=Group, y=Count), pval = TRUE) + 
+  geom_bar(stat="identity", color= "black", 
+           position=position_dodge()) +
+  geom_errorbar(aes(ymin=Count-sd, ymax=Count+sd), width=.2,
+                 position=position_dodge(.9)) +
+   labs(title = paste("Cell Count per Milliliter after Day 3",
+                     sep = "\n"),
+         x = "Treatment Group ",
+         y = "Cell Count") +
+  theme(panel.background = element_rect(fill = "white"),
+         axis.line.x = element_line(colour = "black", size = ),
+         axis.line.y = element_line(colour = "black", size = .5)) +
+  font("title", size = 15, color = "black", face = "bold") +
+  font("xlab", size = 14, color = "black", face = "bold") +
+  font("ylab", size = 14, color = "black", face = "bold") +
+  #font("legend.title", color = "black", face = "bold") +
+  #font("legend.text", size = 14, color = "black", face = "bold") +
+  font("x.text", size = 12, color = "black", face = "bold") + 
+  font("y.text", size = 12, color = "black", face = "bold") + 
+  xlab("Treatment Group") +
+  ylab("Cell  Count")
+
+
+
+print(p)
+```
+
+
+
+```{r}
+#==========================KAPLAN-MEIER ANALYSIS========================================
+#=======================================================================================
+
+```
+
+```{r}
+#rm(list = ls())
+GCR <- read_excel("GCR_file.xlsx")
+
+```
+
+```{r}
+distribution <- ggplot(GCR, aes(x=NR3C1)) + 
+  geom_histogram(size = 0.8, color = "darkblue", binwidth = 0.5) + 
+  xlab("NR3C1 Expression Levels") + 
+  ylab("Distribution") +  
+  font("x.text", size = 12, color = "black", face = "bold") + 
+  font("y.text", size = 12, color = "black", face = "bold") + 
+  font("xlab", size = 14, color = "black", face = "bold") + 
+  font("ylab", size = 14, color = "black", face = "bold") +
+  geom_vline(mapping = NULL, data = NULL, xintercept = 0.9, size = 0.95, linetype = "dashed", color = "red", na.rm = FALSE, show.legend = NA)
+  #geom_vline(aes(xintercept = 0.9, color = "red", size = 0.3, linetype = "dashed"))
+  #geom_vline(aes(xintercept = 0.9, color = "red", size = 0.1, linetype = "dashed"))
+
+print(distribution)
+```
+
+
+```{r}
+###DEFINING A FUNCTION THAT CREATES A BINARY CLASSIFICATION FOR PATIENTS STATUS:
+#   rs stands for recorded status of a patient in the study    
+recorded_status <- function(x){
+  rs <- rep(NA,length(x))
+  for (i in 1:length(x)){
+    if (x[i] == 'deceased'){
+      rs[i] <- 1
+    }else if(x[i] == 'censored'){
+      rs[i] <- 0
+    }
+  }
+  return(rs)
+}
+
+
+
+```
+
+
+```{r}
+
+Data_to_use <- GCR
+RS <- vector() 
+Data_to_use$RS <- recorded_status(Data_to_use$Status) #This creates another column in the data - RS(registered status for patients)
+Data_to_use <- Data_to_use %>% mutate(NR3C1_Status = ifelse(NR3C1 >= 0.9, "High", "low"))
+Data_to_use$NR3C1_Status <- factor(Data_to_use$NR3C1_Status)
+
+
+```
+
+
+```{r}
+
+###FIT THE DATA SET USING THE KAPLAN-MEIER METHOD:
+surv_object <- Surv(time = Data_to_use$`Time (months)`, event = Data_to_use$RS)
+#surv_object
+
+fit <- survfit(surv_object ~ Data_to_use$NR3C1_Status, data = Data_to_use)
+fit
+#summary(fit)
+ggsurvplot(fit, data= Data_to_use, pval=TRUE,
+           title = "Survival Curves Based on Kaplan-Meier estimates",
+           caption = "created with survminer",
+           font.title = c(16, "bold", "darkblue"),
+           font.caption = c(14, "plain", "orange"),
+           font.x = c(14, "bold.italic", "black"),
+           font.y = c(14, "bold.italic", "black"),
+           font.tickslab = c(12, "plain", "black"))
+           
+           
+          
+   
+  
+  
+   
+   
+   
+  
+#survdiff(surv_object~Data_to_use$NR3C1_Status)
+
+# The log-rank test shows that patients with a high expression of NR3C1 mRNA have a significantly worse prognosis compared to patients with a low NR3C1 mRNA expression. 
+#“ A vertical gap means that at a specific time point, one group had a greater fraction of subjects surviving. A horizontal gap means that it took longer for one group to experience a certain fraction of deaths.”
+
+
+```
+
+
+
